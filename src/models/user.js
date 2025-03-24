@@ -2,12 +2,32 @@ const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
 const userSchema = new Schema({
-  firstName: String,
-  lastName: String,
-  emailId: String,
-  password: String,
-  age: Number,
-  gender: String,
+  firstName: { type: String, required: true, minLength: 3, maxLength: 20 },
+  lastName: { type: String },
+  emailId: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true,
+  },
+  password: { type: String, minLength: 8, maxLength: 20, required: true },
+  age: { type: Number, min: 18 },
+  gender: {
+    type: String,
+    validator(value) {
+      if (!["male", "female", "other"].includes(value)) {
+        throw new Error("The gender type is invalid");
+      }
+    },
+  },
+  imageUrl: {
+    String,
+    default:
+      "https://static-00.iconduck.com/assets.00/profile-circle-icon-256x256-ewso45t8.png",
+  },
+  about: { String, default: "Hey there! I am using Dev-Match." },
+  skills: { type: [String] },
 });
 
 const User = mongoose.model("User", userSchema);
