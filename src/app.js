@@ -76,13 +76,33 @@ app.patch("/user/:id", async (req, res) => {
   const id = req.params.id;
   const data = req.body;
   try {
-    const userToUpdate = await User.findByIdAndUpdate(id, data);
+    const ALLOWED_UPDATES = [
+      "imageUrl",
+      "about",
+      "skills",
+      "gender",
+      "password",
+    ];
+    const isUpdateAllowed = Object.keys(data).every((k) =>
+      ALLOWED_UPDATES.includes(k)
+    );
+    if (!isUpdateAllowed) {
+      throw new Error("Update not allowed");
+    }
+    if (data?.skills.length > 8) {
+      throw new Error("Skills cannot exceed 8");
+    }
+    const userToUpdate = await User.findByIdAndUpdate(id, data, {
+      new: true,
+      runValidators: true,
+    });
     if (!userToUpdate) {
       res.status(404).send("User not found");
+      return;
     }
     res.send("User updated successfully");
   } catch (err) {
-    res.status(400).send("An error occured");
+    res.status(400).send(err.message);
   }
 });
 
