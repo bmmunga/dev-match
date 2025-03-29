@@ -22,11 +22,11 @@ const userSchema = new Schema({
     },
   },
   imageUrl: {
-    String,
+    type: String,
     default:
       "https://static-00.iconduck.com/assets.00/profile-circle-icon-256x256-ewso45t8.png",
   },
-  about: { String, default: "Hey there! I am using Dev-Match." },
+  about: { type: String, default: "Hey there! I am using Dev-Match." },
   skills: { type: [String] },
 });
 
