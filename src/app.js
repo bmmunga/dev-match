@@ -2,19 +2,27 @@ const express = require("express");
 require("dotenv").config();
 const { connectDB } = require("./config/database");
 const { User } = require("./models/user");
+const { validateSignupData } = require("./utils/validations");
+const bcrypt = require("bcrypt");
 
 const app = express();
 
 app.use(express.json());
 
-app.post("/signup", async (req, res) => {
-  const user = new User(req.body);
-
+app.post("/signup", validateSignupData, async (req, res) => {
   try {
+    const { firstName, lastName, emailId, password } = req.body;
+    const passwordHash = await bcrypt.hash(password, 10);
+    const user = new User({
+      firstName,
+      lastName,
+      emailId,
+      password: passwordHash,
+    });
     await user.save();
     res.status(201).send("User created successfully");
   } catch (err) {
-    res.status(400).send("User creation failed:", err.message);
+    res.status(400).send(`User creation failed: ${err.message}`);
   }
 });
 
@@ -24,7 +32,7 @@ app.get("/user", async (req, res) => {
   try {
     const user = await User.findOne({ emailId: userEmail });
     if (!user) {
-      res.status(404).send("User not found");
+      return res.status(404).send("User not found");
     }
     res.send(user);
   } catch (err) {
