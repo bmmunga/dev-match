@@ -11,7 +11,7 @@ const userSchema = new Schema({
     lowercase: true,
     trim: true,
   },
-  password: { type: String, minLength: 8, maxLength: 20, required: true },
+  password: { type: String, minLength: 8, required: true },
   age: { type: Number, min: 18 },
   gender: {
     type: String,
