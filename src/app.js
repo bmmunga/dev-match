@@ -9,10 +9,17 @@ const app = express();
 
 app.use(express.json());
 
-app.post("/signup", validateSignupData, async (req, res) => {
+app.post("/signup", async (req, res) => {
   try {
+    validateSignupData(req);
+
     const { firstName, lastName, emailId, password } = req.body;
     const passwordHash = await bcrypt.hash(password, 10);
+
+    const existingUser = await User.findOne({ emailId });
+    if (existingUser) {
+      return res.status(400).json("Invalid signup information");
+    }
     const user = new User({
       firstName,
       lastName,
@@ -23,6 +30,25 @@ app.post("/signup", validateSignupData, async (req, res) => {
     res.status(201).send("User created successfully");
   } catch (err) {
     res.status(400).send(`User creation failed: ${err.message}`);
+  }
+});
+
+app.post("/signin", async (req, res) => {
+  try {
+    const { emailId, password } = req.body;
+    const user = await User.findOne({ emailId: emailId });
+    if (!user) {
+      return res.status(401).send("Invalid email or password");
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (isPasswordValid) {
+      return res.status(200).send("Login successful");
+    } else {
+      return res.status(401).send("Invalid email or password");
+    }
+  } catch (err) {
+    res.send(400).send("ERROR: " + err.message);
   }
 });
 
