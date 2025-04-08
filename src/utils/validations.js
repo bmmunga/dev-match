@@ -1,6 +1,6 @@
 const validator = require("validator");
 
-const validateSignupData = (req, res, next) => {
+const validateSignupData = (req, res) => {
   const { firstName, lastName, emailId, password } = req.body;
 
   if (!firstName || !lastName) {
@@ -12,7 +12,6 @@ const validateSignupData = (req, res, next) => {
       .status(400)
       .json("Password must contain letters, numbers, and symbols");
   }
-  next();
 };
 
 module.exports = { validateSignupData };
