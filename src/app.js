@@ -4,12 +4,16 @@ const { connectDB } = require("./config/database");
 const { User } = require("./models/user");
 const { validateSignupData } = require("./utils/validations");
 const bcrypt = require("bcrypt");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
+const { authenticate } = require("./middlewares/authenticate");
 
 const app = express();
 
 app.use(express.json());
+app.use(cookieParser());
 
-app.post("/signup", async (req, res) => {
+app.post("/sign-up", async (req, res) => {
   try {
     validateSignupData(req);
 
@@ -33,7 +37,7 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-app.post("/signin", async (req, res) => {
+app.post("/sign-in", async (req, res) => {
   try {
     const { emailId, password } = req.body;
     const user = await User.findOne({ emailId: emailId });
@@ -43,6 +47,12 @@ app.post("/signin", async (req, res) => {
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (isPasswordValid) {
+      const token = jwt.sign({ _id: user._id }, "secretkey");
+      res.cookie("auth_token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 24 * 60 * 60 * 1000,
+      });
       return res.status(200).send("Login successful");
     } else {
       return res.status(401).send("Invalid email or password");
@@ -52,91 +62,12 @@ app.post("/signin", async (req, res) => {
   }
 });
 
-app.get("/user", async (req, res) => {
-  const userEmail = req.body.emailId;
-
+app.get("/profile", authenticate, (req, res) => {
   try {
-    const user = await User.findOne({ emailId: userEmail });
-    if (!user) {
-      return res.status(404).send("User not found");
-    }
-    res.send(user);
+    const user = req.user;
+    res.status(200).send(user);
   } catch (err) {
-    res.status(400).send("An error occured");
-  }
-});
-
-app.get("/feed", async (req, res) => {
-  try {
-    userFeed = await User.find({});
-    if (!userFeed) {
-      res.send(404).send("No users found");
-    }
-    res.send(userFeed);
-  } catch (err) {
-    res.status(400).send("An error occured");
-  }
-});
-
-app.get("/user/:id", async (req, res) => {
-  const id = req.params.id;
-
-  try {
-    const userById = await User.findById(id);
-    if (!userById) {
-      res.status(404).send("User not found");
-    }
-    res.send(userById);
-  } catch (err) {
-    res.status(400).send("An error occured");
-  }
-});
-
-app.delete("/user/:id", async (req, res) => {
-  const id = req.params.id;
-
-  try {
-    const userToDelete = await User.findByIdAndDelete(id);
-    if (!userToDelete) {
-      res.status(404).send("User not found");
-    }
-    res.send("User deleted successfully");
-  } catch (err) {
-    res.status(400).send("An error occured");
-  }
-});
-
-app.patch("/user/:id", async (req, res) => {
-  const id = req.params.id;
-  const data = req.body;
-  try {
-    const ALLOWED_UPDATES = [
-      "imageUrl",
-      "about",
-      "skills",
-      "gender",
-      "password",
-    ];
-    const isUpdateAllowed = Object.keys(data).every((k) =>
-      ALLOWED_UPDATES.includes(k)
-    );
-    if (!isUpdateAllowed) {
-      throw new Error("Update not allowed");
-    }
-    if (data?.skills.length > 8) {
-      throw new Error("Skills cannot exceed 8");
-    }
-    const userToUpdate = await User.findByIdAndUpdate(id, data, {
-      new: true,
-      runValidators: true,
-    });
-    if (!userToUpdate) {
-      res.status(404).send("User not found");
-      return;
-    }
-    res.send("User updated successfully");
-  } catch (err) {
-    res.status(400).send(err.message);
+    res.status(400).send("ERROR: " + err.message);
   }
 });
 
