@@ -45,9 +45,9 @@ app.post("/sign-in", async (req, res) => {
       return res.status(401).send("Invalid email or password");
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await user.validatePassword(password);
     if (isPasswordValid) {
-      const token = jwt.sign({ _id: user._id }, "secretkey");
+      const token = await user.getJWT();
       res.cookie("auth_token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
@@ -58,7 +58,7 @@ app.post("/sign-in", async (req, res) => {
       return res.status(401).send("Invalid email or password");
     }
   } catch (err) {
-    res.send(400).send("ERROR: " + err.message);
+    res.status(400).send("ERROR: " + err.message);
   }
 });
 
@@ -79,5 +79,5 @@ connectDB()
     });
   })
   .catch((err) => {
-    console.error("Database connection failed");
+    console.error(`DB ERROR : ${err.message}`);
   });
