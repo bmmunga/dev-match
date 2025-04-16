@@ -1,6 +1,7 @@
 const express = require("express");
 const { authenticate } = require("../middlewares/authenticate");
 const { validateProfileEditData } = require("../utils/validations");
+const bcrypt = require("bcrypt");
 
 const profileRouter = express.Router();
 
@@ -30,6 +31,22 @@ profileRouter.patch("/edit", authenticate, async (req, res) => {
       .status(500)
       .send("An error occurred while retrieving the profile.");
   }
+});
+
+profileRouter.patch("/password/reset", authenticate, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) {
+    return res.status(400).send("Both current and new password are required.");
+  }
+  const isPasswordValid = await req.user.validatePassword(currentPassword);
+  if (!isPasswordValid) {
+    return res.status(401).send("Invalid password.");
+  }
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(newPassword, salt);
+  req.user.password = hashedPassword;
+  await req.user.save();
+  res.status(200).send("Password updated successfully.");
 });
 
 module.exports = { profileRouter };
