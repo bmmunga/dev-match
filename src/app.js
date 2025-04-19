@@ -11,9 +11,11 @@ app.use(cookieParser());
 
 const { authRouter } = require("./routes/auth");
 const { profileRouter } = require("./routes/profile");
+const { requestRouter } = require("./routes/request");
 
 app.use("/auth", authRouter);
 app.use("/profile", profileRouter);
+app.use("/request", requestRouter);
 
 Promise.all([connectDB(), connectRedis()])
   .then(() => {
